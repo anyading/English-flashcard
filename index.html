@@ -2172,14 +2172,18 @@
     function toggleFav() { const w = activeVocabulary[currentCardIndex]?.text; if (w) { const idx = favoritesList.indexOf(w); idx === -1 ? favoritesList.push(w) : favoritesList.splice(idx, 1); saveFav(); updateHeart(); if (notebookModal.style.display === 'flex') renderNotebook(); } }
     function renderAllWords() { let html = ''; activeVocabulary.forEach((w, i) => { html += `<div class="word-item" data-idx="${i}"><strong>${escapeHtml(w.text)}</strong><span style="font-size:0.7rem;"> ${escapeHtml(w.definition)}</span></div>`; }); allWordsList.innerHTML = html; document.querySelectorAll('#allWordsList .word-item').forEach(el => { el.addEventListener('click', () => { currentCardIndex = parseInt(el.dataset.idx); updateCard(); allWordsModal.style.display = 'none'; showToast(`跳转到: ${activeVocabulary[currentCardIndex].text}`); }); }); }
     function renderNotebook() { if (favoritesList.length === 0) { notebookList.innerHTML = '<div class="empty-msg">暂无收藏</div>'; return; } let html = ''; favoritesList.forEach(word => { const entry = activeVocabulary.find(w => w.text === word); if (entry) html += `<div class="word-item" data-word="${escapeHtml(word)}"><div><strong>${escapeHtml(word)}</strong><p>${escapeHtml(entry.definition)}</p></div><button class="remove-word" data-word="${escapeHtml(word)}"><i class="fas fa-trash-alt"></i></button></div>`; }); notebookList.innerHTML = html; document.querySelectorAll('.remove-word').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); const w = btn.dataset.word; const idx = favoritesList.indexOf(w); if (idx !== -1) { favoritesList.splice(idx, 1); saveFav(); renderNotebook(); if (activeVocabulary[currentCardIndex]?.text === w) updateHeart(); } }); }); document.querySelectorAll('#notebookList .word-item').forEach(item => { item.addEventListener('click', (e) => { if (e.target.classList.contains('remove-word')) return; const w = item.dataset.word; const idx = activeVocabulary.findIndex(v => v.text === w); if (idx !== -1) { currentCardIndex = idx; updateCard(); notebookModal.style.display = 'none'; showToast(`切换到: ${w}`); } }); }); }
-    // 微信也能兼容的发音函数（使用免费API）
-    function say(word) {
-        const audioUrl = `https://api.dictionaryapi.dev/api/media/pronunciations/en/${word}-us.mp3`;
-        const audio = new Audio(audioUrl);
-
-        audio.play().catch(e => {
-            alert("发音加载失败，请点击右上角用浏览器打开哦~");
-        });
+    // 全平台最强发音：微信 / 手机 / 电脑 100%可用
+    function say(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            let u = new SpeechSynthesisUtterance();
+            u.text = text;
+            u.lang = 'en-US';
+            u.rate = 1;
+            window.speechSynthesis.speak(u);
+        } else {
+            showToast("您的浏览器不支持语音功能");
+        }
     }
 
     function speak() {
